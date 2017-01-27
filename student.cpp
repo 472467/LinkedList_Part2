@@ -3,7 +3,7 @@
 Student::Student(){
 	fName = new char[80];
 	lName = new char[80];
-	id  = 9999999;
+	id  = -1;
 	gpa = 3.56;
 	strcpy(fName, "Mike");// name purposelly NULL
 	strcpy(lName, "Smith");

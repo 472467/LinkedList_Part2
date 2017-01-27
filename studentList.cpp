@@ -25,7 +25,9 @@ struct STUDENT{
 	float gpa;
 };
 bool translateMove(char* input, Node* n);
-Node* copyNode(Node*, Node*, Node*);
+void deleteNode(Node*, Node*, Node*, int, Node*);
+Node* copyNode(Node*&, Node*, Node*);
+void printNode(Node*, Node*);
 //int studentNum = 0;
 
 int main(){
@@ -95,37 +97,10 @@ bool translateMove(char* input, Node* n){//converts input into a command that do
 	}else if(strcasecmp(input, "PRINT") == 0){//NEED ITERATOR THROUGH LIST HERE
 	  
 	    system("clear");
-	    cout << fixed << showpoint;
-	    cout << setprecision(2);//sets deicmal to be 5.00 even if just 5
+	    
+		Node* currentNode = n;
 		
-		Node* recursedNode = n;
-		Student* s = recursedNode->getStudent();
-		try { 
-			cout << endl <<  "Name: " << s->getFName() << ", ";
-			cout << s->getLName();
-			cout << " GPA: " << s->getGPA();
-			cout << " ID: " << s->getID() << "\n\n";
-		
-			while((recursedNode->getNext()) != NULL){
-				recursedNode = recursedNode->getNext();
-				Student* s = recursedNode->getStudent();
-				
-				cout << "Name: " << s->getFName() << ", ";
-				cout << s->getLName();
-				cout << " GPA: " << s->getGPA();
-				cout << " ID: " << s->getID() << "\n\n";
-				
-				
-			}
-			
-		}catch (const std::exception& e) { 
-			cout << "NO STUDENTS IN LIST" << endl;
-		}
-		
-	    //cout << "\nName: " << (*(*it)).lName << ", " << (*it)->fName;
-	    //cout << "\nID: " << (*it)->id;
-	    //cout << "\nGPA: " << (*it)->gpa << "\n\n";//serparates the peopel
-	  
+		printNode(n, currentNode);	  
 	    
 	}else if(strcasecmp(input, "DELETE") == 0){
 		cout << "Please input the ID of the student you wish to delete: ";
@@ -133,57 +108,20 @@ bool translateMove(char* input, Node* n){//converts input into a command that do
 		stringstream ss(in);//converts input to an int, to avoid that error
 		int delID = 0;
 		ss >> delID;
-	  
-		Node* recursedNode = n;
-		Node* previousNode = NULL;
-		bool nodeDeleted = false;
-		int count = 0;
-		bool running = true;
-	  
-		while(running){//makes sure it runs at least once
-			if((recursedNode->getNext()) == NULL){//should run once more before it runs out of nodes
-				running = false;
-			}
-			
-			Student* s = recursedNode->getStudent();
-			//cout << "Not aborted." << endl;
-			cout << (recursedNode->getStudent())->getFName();
-			
-			if(s->getID() == delID){
-				if((recursedNode->getNext()) != NULL && previousNode != NULL){//someone where between start and end, WORKS
-					previousNode->setNext(recursedNode->getNext());
-					
-					delete recursedNode;
-					running = false;
-					
-				}else if((recursedNode->getNext()) != NULL){//at start with things after it
-					Node* currentSource = new Node(new Student());
-					Node* currentNode = new Node(new Student());
-					Node* nodeStore = copyNode(recursedNode->getNext(), currentSource, currentNode);
-					
-					delete recursedNode;
-					recursedNode = nodeStore;
-					running = false;
-					
-				}else{//at end or at start with no other nodes
-					previousNode->setNext(NULL);
-					
-					delete recursedNode;
-					running = false;
-				}
-				nodeDeleted = true;
-			}
-			if(!nodeDeleted){
-				cout << "recursedNode set" << endl;
-				previousNode = recursedNode;
-				
-				recursedNode = recursedNode->getNext();
-			}
-			
-			count++;
-		}
-	  
-	  return true;
+		Node* tmpNode = n;
+		Node* tmpPrevious = NULL;
+		Node* ifAtStartWithThingsAfter = NULL;
+		
+		deleteNode(n, tmpNode, tmpPrevious, delID, ifAtStartWithThingsAfter);
+		
+		
+		Node* tNode = ifAtStartWithThingsAfter;
+		//printNode(ifAtStartWithThingsAfter, tNode);
+		
+		
+		
+		
+		return true;
 	}else if(strcasecmp(input, "EXIT") == 0){
 	  exit(0);//ends program
 	}else{
@@ -191,20 +129,98 @@ bool translateMove(char* input, Node* n){//converts input into a command that do
 	}
 }
 
-Node* copyNode(Node* toBeCloned, Node* currentSource, Node* currentNode){//OGSourceNode is the first node in list, currentSource is the current CloneList node, currentNode is node current node from toBeClonedList
+void deleteNode(Node* sourceNode, Node* currentNode, Node* previousNode, int delID, Node* insurancePolicy){
+	bool running = true;
+	if((currentNode->getStudent())->getID() == delID){
+		if((currentNode->getNext()) != NULL && previousNode != NULL){//someone where between start and end, WORKS
+			previousNode->setNext(currentNode->getNext());
+			
+			delete currentNode;
+			running = false;
+			
+		}else if((currentNode->getNext()) != NULL){//at start with things after it
+			Node* currentSource = new Node(new Student());
+			Node* newNode = new Node(new Student());
+
+			insurancePolicy = copyNode(currentNode->getNext(), currentSource, newNode);
+			delete currentNode;
+			
+			currentNode = insurancePolicy;
+			running = false;
+			
+		}else{//at end or at start with no other nodes
+			if(previousNode != NULL){
+				previousNode->setNext(NULL);
+				delete currentNode;
+			}else{
+				cout << "Not allowed to delete with only one student left.";
+			}
+			
+			
+			
+			running = false;
+		}
+	}else{
+		if(running){//dont want it to run again since shit gets deleted
+			if(currentNode->getNext() != NULL){
+				previousNode = currentNode;
+				currentNode = currentNode->getNext();
+				
+				deleteNode(sourceNode, currentNode, previousNode, delID, insurancePolicy);//recursive
+			}else{
+				cout << "\n\nID not found.\n\n";
+			}
+		}
+	}
+	
+}
+
+void printNode(Node* sourceNode, Node* currentNode){
+	if((sourceNode->getStudent())->getID() == (currentNode->getStudent())->getID()){//if the currentNode is the first node in the list
+		try{//this runs to prevent an error when list is empty, probably never fails here
+			cout << "\nName: " << (sourceNode->getStudent())->getLName() << ", " << (sourceNode->getStudent())->getFName();
+			cout << "\nID: " << (sourceNode->getStudent())->getID();
+			cout << "\nGPA: " << (sourceNode->getStudent())->getGPA() << "\n\n";
+			
+			if(sourceNode->getNext() != NULL){
+				currentNode = sourceNode->getNext();
+				printNode(sourceNode, currentNode);
+			}
+			
+		}catch (const exception& e){
+			cout << "StudentList is empty.";
+		}
+
+	}else{
+		cout << "\nName: " << (currentNode->getStudent())->getLName() << ", " << (currentNode->getStudent())->getFName();
+		cout << "\nID: " << (currentNode->getStudent())->getID();
+		cout << "\nGPA: " << (currentNode->getStudent())->getGPA() << "\n\n";
+		
+		if(currentNode->getNext() != NULL){
+			currentNode = currentNode->getNext();
+			printNode(sourceNode, currentNode);
+		}
+	}
+}
+
+Node* copyNode(Node*& toBeCloned, Node* currentSource, Node* currentNode){//OGSourceNode is the first node in list, currentSource is the current CloneList node, currentNode is node current node from toBeClonedList
+	
 	Node* OGSourceNode = new Node(new Student());
 	if(currentNode != NULL){//prevents a null node from running shizzle
 		
 		if((currentNode->getStudent())->getID() == ((currentSource->getStudent())->getID())){//this runs if the currentNode is the first node in the list
 			Student* clonedStudent = new Student();
-		
+			
 			char* newFName = new char[80];
 			char* newLName = new char[80];
-			
-			strcpy(newFName, (toBeCloned->getStudent())->getFName());
+
+			strcpy(newFName, (toBeCloned->getStudent())->getFName());//CRASHES HERE
+
 			strcpy(newLName, (toBeCloned->getStudent())->getLName());
+
 			clonedStudent->setFName(newFName);
 			clonedStudent->setLName(newLName);
+			
 			clonedStudent->setID((toBeCloned->getStudent())->getID());
 			clonedStudent->setGPA((toBeCloned->getStudent())->getGPA());
 			
@@ -216,12 +232,13 @@ Node* copyNode(Node* toBeCloned, Node* currentSource, Node* currentNode){//OGSou
 				currentNode = toBeCloned->getNext();
 				copyNode(toBeCloned, currentSource, currentNode);
 			}
+			cout << "Dank2" << endl;
 		}else{//this is all nodes after first
 			Student* clonedStudent = new Student();
-		
+			
 			char* newFName = new char[80];
 			char* newLName = new char[80];
-			
+			cout << "Dank3" << endl;
 			strcpy(newFName, (currentNode->getStudent())->getFName());
 			strcpy(newLName, (currentNode->getStudent())->getLName());
 			clonedStudent->setFName(newFName);
@@ -230,7 +247,7 @@ Node* copyNode(Node* toBeCloned, Node* currentSource, Node* currentNode){//OGSou
 			clonedStudent->setGPA((currentNode->getStudent())->getGPA());
 			
 			Node* tmpNode = new Node(clonedStudent);
-			
+			cout << "Dank4" << endl;
 			currentSource->setNext(tmpNode);
 			currentSource = tmpNode;
 			
@@ -242,7 +259,9 @@ Node* copyNode(Node* toBeCloned, Node* currentSource, Node* currentNode){//OGSou
 		
 	}
 	
-	if((OGSourceNode->getStudent())->getID() != 9999999){
+	if((OGSourceNode->getStudent())->getID() != -1){//default ID is -1, as long as the default ID is changed the copy will be valid
+		//clone = OGSourceNode;
+		toBeCloned = OGSourceNode;
 		return OGSourceNode;
 	}else{
 		return NULL;
