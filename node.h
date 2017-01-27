@@ -20,11 +20,18 @@ class Node{
 		Node* end();
 		void erase();
 		void push_back(Student* );
+		void setStudent(Student*);
 		void setNext(Node* );//set the next pointer to the corresponding node pointer
 		//void setValue(int newValue);//G's example
 		//int getValue(); //G's example
 };
 
 #endif
+
+void Node::setStudent(Student* s){
+	info = s;
+}
+
+
 
 

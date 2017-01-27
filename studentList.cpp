@@ -24,10 +24,12 @@ struct STUDENT{
 	int id;
 	float gpa;
 };
-bool translateMove(char* input, Node* n);
+bool translateMove(char* input, Node* n);//header stuff
 void deleteNode(Node*, Node*, Node*, int, Node*);
 Node* copyNode(Node*&, Node*, Node*);
 void printNode(Node*, Node*);
+void averageGPA(Node*, Node*, float&, int&);
+void addSortNode(Node*, Node*, Node*, Node*);
 //int studentNum = 0;
 
 int main(){
@@ -42,7 +44,7 @@ int main(){
 		input[x]= '\0';
 	}
 	while(true){
-		cout << "Welcome to the student directory. Please 'ADD', 'PRINT'(prints list of ALL students) or 'DELETE' a student. Type EXIT to quit.\n";
+		cout << "Welcome to the student directory. Please 'ADD', 'AVERAGE'(averages grades of all students), 'PRINT'(prints list of ALL students) or 'DELETE' a student. Type EXIT to quit.\n";
 		cin.clear();
 		cin.sync();//cleans cin
 		cin.getline(input, 30);
@@ -81,16 +83,11 @@ bool translateMove(char* input, Node* n){//converts input into a command that do
 		buffer2 >> grade;
 		s->setGPA(grade);
 
-		Node* tNode = new Node(s);
+		Node* newNode = new Node(s);
+		Node* previousNode = NULL;
+		Node* current = n;
 		
-		Node* recursedNode = n;
-
-		while((recursedNode->getNext()) != NULL){
-			
-			recursedNode = recursedNode->getNext();
-		}
-		
-		recursedNode->setNext(tNode);
+		addSortNode(n, current, newNode, previousNode);
 		
 		//(*v).push_back(s);//pushes it to end of vector
 		return true;
@@ -112,16 +109,22 @@ bool translateMove(char* input, Node* n){//converts input into a command that do
 		Node* tmpPrevious = NULL;
 		Node* ifAtStartWithThingsAfter = NULL;
 		
-		deleteNode(n, tmpNode, tmpPrevious, delID, ifAtStartWithThingsAfter);
-		
-		
-		Node* tNode = ifAtStartWithThingsAfter;
-		//printNode(ifAtStartWithThingsAfter, tNode);
-		
-		
-		
+		deleteNode(n, tmpNode, tmpPrevious, delID, ifAtStartWithThingsAfter);	
 		
 		return true;
+	}else if(strcasecmp(input, "AVERAGE") == 0){//averages the gpa of the students in nodes
+		float currentGPA =  0;
+		int runTimes = 0;
+		Node* current = n;
+		averageGPA(n, current, currentGPA, runTimes);
+		
+		
+		currentGPA/= (float)runTimes;
+		
+		cout << fixed << showpoint;
+		cout << setprecision(2);
+		cout << "\n\n AVERAGE GPA OF ALL STUDENTS: " << currentGPA << "\n\n";
+		
 	}else if(strcasecmp(input, "EXIT") == 0){
 	  exit(0);//ends program
 	}else{
@@ -129,8 +132,40 @@ bool translateMove(char* input, Node* n){//converts input into a command that do
 	}
 }
 
-void deleteNode(Node* sourceNode, Node* currentNode, Node* previousNode, int delID, Node* insurancePolicy){
+void addSortNode(Node* source, Node* current, Node* newNode, Node* previousNode){//adds an
+	if((current->getStudent())->getID() > (newNode->getStudent())->getID()){//current node is GREATER than node to be added
+		if(previousNode != NULL){
+			newNode->setNext(current);
+			previousNode->setNext(newNode);
+		}else{
+			Student* tmp = newNode->getStudent();
+			if(current->getNext() != NULL){
+				newNode->setNext(current->getNext());
+			}
+			current->setNext(newNode);//just swaps the students instead of doing some more complicated wizardry
+			newNode->setStudent(current->getStudent());
+			current->setStudent(tmp);
+		}
+	}else if((current->getStudent())->getID() < (newNode->getStudent())->getID()){//current node is LESS than node to be added
+		if(current->getNext() != NULL){
+			current = current->getNext();
+			addSortNode(source, current, newNode, previousNode);
+		}else{
+			current->setNext(newNode);
+		}
+	}else{//current is EQUAL to newNode, means that this the first in the list(or some buffoon entered 2 identical ID numbers)
+		if(current->getNext() != NULL){
+			current = current->getNext();
+			addSortNode(source, current, newNode, previousNode);
+		}else{
+			current->setNext(newNode);
+		}
+	}
+}
+
+void deleteNode(Node* sourceNode, Node* currentNode, Node* previousNode, int delID, Node* insurancePolicy){//deletes node through recursion
 	bool running = true;
+	Node* newNode = new Node(NULL);
 	if((currentNode->getStudent())->getID() == delID){
 		if((currentNode->getNext()) != NULL && previousNode != NULL){//someone where between start and end, WORKS
 			previousNode->setNext(currentNode->getNext());
@@ -139,13 +174,18 @@ void deleteNode(Node* sourceNode, Node* currentNode, Node* previousNode, int del
 			running = false;
 			
 		}else if((currentNode->getNext()) != NULL){//at start with things after it
-			Node* currentSource = new Node(new Student());
-			Node* newNode = new Node(new Student());
+		
+			if((sourceNode->getNext())->getNext() !=  NULL){//have to do lots of null checking
+				sourceNode->setStudent((sourceNode->getNext())->getStudent());
+				sourceNode->setNext((sourceNode->getNext())->getNext());
+				//cout << "Dank"<< endl;
+			}else{
+				sourceNode->setStudent((sourceNode->getNext())->getStudent());
+				sourceNode->setNext(NULL);
+			}
 
-			insurancePolicy = copyNode(currentNode->getNext(), currentSource, newNode);
-			delete currentNode;
-			
-			currentNode = insurancePolicy;
+			delete newNode;
+
 			running = false;
 			
 		}else{//at end or at start with no other nodes
@@ -153,7 +193,7 @@ void deleteNode(Node* sourceNode, Node* currentNode, Node* previousNode, int del
 				previousNode->setNext(NULL);
 				delete currentNode;
 			}else{
-				cout << "Not allowed to delete with only one student left.";
+				cout << "\nNot allowed to delete with only one student left.\n\n";
 			}
 			
 			
@@ -175,12 +215,14 @@ void deleteNode(Node* sourceNode, Node* currentNode, Node* previousNode, int del
 	
 }
 
-void printNode(Node* sourceNode, Node* currentNode){
+void printNode(Node* sourceNode, Node* currentNode){//prints node thr
 	if((sourceNode->getStudent())->getID() == (currentNode->getStudent())->getID()){//if the currentNode is the first node in the list
 		try{//this runs to prevent an error when list is empty, probably never fails here
 			cout << "\nName: " << (sourceNode->getStudent())->getLName() << ", " << (sourceNode->getStudent())->getFName();
 			cout << "\nID: " << (sourceNode->getStudent())->getID();
-			cout << "\nGPA: " << (sourceNode->getStudent())->getGPA() << "\n\n";
+			cout << fixed << showpoint;
+			cout << setprecision(2);
+			cout << "\nGPA: " <<  (sourceNode->getStudent())->getGPA() << "\n\n";
 			
 			if(sourceNode->getNext() != NULL){
 				currentNode = sourceNode->getNext();
@@ -194,6 +236,8 @@ void printNode(Node* sourceNode, Node* currentNode){
 	}else{
 		cout << "\nName: " << (currentNode->getStudent())->getLName() << ", " << (currentNode->getStudent())->getFName();
 		cout << "\nID: " << (currentNode->getStudent())->getID();
+		cout << fixed << showpoint;
+		cout << setprecision(2);
 		cout << "\nGPA: " << (currentNode->getStudent())->getGPA() << "\n\n";
 		
 		if(currentNode->getNext() != NULL){
@@ -203,6 +247,19 @@ void printNode(Node* sourceNode, Node* currentNode){
 	}
 }
 
+void averageGPA(Node* source, Node* current, float& currentGPA, int& runTimes){//averages gpas through recursion
+	if(current->getNext() != NULL){
+		currentGPA += (current->getStudent())->getGPA();
+		runTimes++;//these variables remain when the function gets called again, kinda like a global but theyre local to another function
+		current = current->getNext();
+		averageGPA(source, current, currentGPA, runTimes);
+	}else{
+		currentGPA += (current->getStudent())->getGPA();
+		runTimes++;
+	}
+	
+}
+//THIS FUNCTION IS UNUSED, phased out because it was unneeded wish it hadnt have spent so long on making this monstrosity
 Node* copyNode(Node*& toBeCloned, Node* currentSource, Node* currentNode){//OGSourceNode is the first node in list, currentSource is the current CloneList node, currentNode is node current node from toBeClonedList
 	
 	Node* OGSourceNode = new Node(new Student());
